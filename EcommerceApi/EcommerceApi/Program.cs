@@ -1,4 +1,6 @@
 using MassTransit;
+using Orders.Services;
+using Saga;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +12,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMassTransit(x =>
 {
-    x.UsingInMemory((context, cfg) =>
-    {
-        cfg.ConfigureEndpoints(context);
-    });
-});
+    x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
+    x.AddSaga<ShopSaga>().InMemoryRepository();
+}).AddScoped<IOrdersService, OrdersService>();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Orders.Commands;
+using Orders.Services;
 
 namespace EcommerceApi.Controllers;
 
@@ -7,6 +9,13 @@ namespace EcommerceApi.Controllers;
 public class OrdersController : ControllerBase
 {
 
+    private readonly IOrdersService _ordersService;
+
+    public OrdersController(IOrdersService ordersService)
+    {
+        _ordersService = ordersService;
+    }
+
     [HttpGet()]
     public IActionResult GetOrders()
     {
@@ -14,8 +23,9 @@ public class OrdersController : ControllerBase
     }
     
     [HttpPost()]
-    public IActionResult CreateOrder()
+    public async Task<IActionResult> CreateOrder(CreateOrder createOrder)
     {
-        return Ok("Orders get");
+        await _ordersService.CreateOrder(createOrder);
+        return NoContent();
     }
 }
