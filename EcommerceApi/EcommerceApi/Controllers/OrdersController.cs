@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Orders.Commands;
+using Orders.Queries;
 using Orders.Services;
 
 namespace EcommerceApi.Controllers;
@@ -16,10 +17,11 @@ public class OrdersController : ControllerBase
         _ordersService = ordersService;
     }
 
-    [HttpGet()]
-    public IActionResult GetOrders()
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetOrders(int id)
     {
-        return Ok("Orders get");
+        var orderDto = await _ordersService.GetOrder(new GetOrder(id));
+        return Ok(orderDto);
     }
     
     [HttpPost()]
