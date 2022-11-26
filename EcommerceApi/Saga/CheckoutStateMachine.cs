@@ -35,19 +35,35 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         });
 
         InstanceState(x => x.CurrentState);
-        
+
         Initially(
             When(OrderCreated)
                 .Then(x => x.Saga.OrderId = x.Message.OrderId)
-                .Then(x => logger.LogInformation("Created checkout saga with correlationId: {correlationId}, orderId: {}", x.Saga.CorrelationId, x.Saga.OrderId))
+                .Then(x => LogStep(logger, nameof(OrderStatusRequest), x.Saga))
                 .TransitionTo(Created));
-        
+
         DuringAny(
             When(OrderStatusRequest)
+                .Then(x => LogStep(logger, nameof(OrderStatusRequest), x.Saga))
+                .Then(x => x.Saga.RequestCount += 1)
+                .Then(x =>
+                {
+                    if (x.Saga.RequestCount % 3 == 0)
+                    {
+                        throw new Exception();
+                    }
+                })
                 .RespondAsync(x => x.Init<OrderStatusResponse>(new OrderStatusResponse
                 {
                     Status = x.Saga.CurrentState,
                     OrderId = x.Saga.OrderId
                 })));
+    }
+
+    private void LogStep(ILogger<CheckoutStateMachine> logger, string stepName, CheckoutState state)
+    {
+        logger.LogInformation(
+            "{StepName} with correlationId: {CorrelationId}, orderId: {OrderId} requestCount: {RequestCount}", stepName, state.CorrelationId,
+            state.OrderId, state.RequestCount);
     }
 }

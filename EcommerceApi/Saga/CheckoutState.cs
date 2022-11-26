@@ -7,4 +7,5 @@ public class CheckoutState : SagaStateMachineInstance
     public Guid CorrelationId { get; set; }
     public string CurrentState { get; set; }
     public int OrderId { get; set; }
+    public int RequestCount { get; set; }
 }

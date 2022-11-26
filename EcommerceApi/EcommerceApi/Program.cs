@@ -13,7 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMassTransit(x =>
 {
     x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
-    x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>().InMemoryRepository();
+    x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition)).InMemoryRepository();
 }).AddScoped<IOrdersService, OrdersService>();
 
 
