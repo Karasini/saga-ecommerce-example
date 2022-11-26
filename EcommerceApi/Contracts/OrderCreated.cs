@@ -1,10 +1,7 @@
-using MassTransit;
+namespace Contracts;
 
-namespace Orders.Events;
-
-public record OrderCreated() : CorrelatedBy<Guid>
+public record OrderCreated()
 {
-    public Guid CorrelationId { get; init; }
     public int OrderId { get; init; }
     public int ProductId { get; init; }
     public string Color { get; init; }

@@ -1,6 +1,6 @@
+using Contracts;
 using MassTransit;
 using Orders.Commands;
-using Orders.Events;
 
 namespace Orders.Services;
 
@@ -21,7 +21,6 @@ public class OrdersService : IOrdersService
             ProductId = createOrder.ProductId,
             Color = createOrder.Color,
             Size = createOrder.Color,
-            CorrelationId = Guid.NewGuid()
         };
 
         await _publishEndpoint.Publish(createdEvent);
