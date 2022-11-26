@@ -7,6 +7,9 @@ namespace Saga;
 public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 {
     public State Created { get; private set; }
+    public State Paid { get; private set; }
+    public State PaymentFailed { get; private set; }
+    public State Reserved { get; private set; }
     public State Completed { get; private set; }
 
     public Event<OrderCreated> OrderCreated { get; private set; }
@@ -15,8 +18,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
     {
         Event(() => OrderCreated,
-            e => e.CorrelateBy<int>(state => state.OrderId,
-                    m => m.Message.OrderId)
+            e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId)
                 .SelectId(x => x.CorrelationId ?? NewId.NextGuid()));
 
         Event(() => OrderStatusRequest, x =>
@@ -38,7 +40,13 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 
         Initially(
             When(OrderCreated)
-                .Then(x => x.Saga.OrderId = x.Message.OrderId)
+                .Then(x =>
+                {
+                    x.Saga.OrderId = x.Message.OrderId;
+                    x.Saga.ProductId = x.Message.ProductId;
+                    x.Saga.Color = x.Message.Color;
+                    x.Saga.Size = x.Message.Size;
+                })
                 .Then(x => LogStep(logger, nameof(OrderStatusRequest), x.Saga))
                 .TransitionTo(Created));
 
@@ -63,7 +71,8 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     private void LogStep(ILogger<CheckoutStateMachine> logger, string stepName, CheckoutState state)
     {
         logger.LogInformation(
-            "{StepName} with correlationId: {CorrelationId}, orderId: {OrderId} requestCount: {RequestCount}", stepName, state.CorrelationId,
+            "{StepName} with correlationId: {CorrelationId}, orderId: {OrderId} requestCount: {RequestCount}", stepName,
+            state.CorrelationId,
             state.OrderId, state.RequestCount);
     }
 }
