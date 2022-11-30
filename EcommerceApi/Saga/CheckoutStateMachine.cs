@@ -2,6 +2,7 @@ using Contracts;
 using MassTransit;
 using MassTransit.Events;
 using Microsoft.Extensions.Logging;
+using Saga.Events;
 
 namespace Saga;
 
@@ -21,10 +22,19 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public Event<OrderCreated> OrderCreated { get; private set; }
     public Event<OrderStatusRequest> OrderStatusRequest { get; private set; }
 
+    public Schedule<CheckoutState, OrderPaymentTimeoutExpired> OrderPaymentTimeout { get; private set; }
+
+
     public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
     {
         SetupEvents();
 
+        Schedule(() => OrderPaymentTimeout, instance => instance.OrderPaymentTimeoutTokenId, s =>
+        {
+            s.Delay = TimeSpan.FromMinutes(1);
+
+            s.Received = r => r.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId);
+        });
         InstanceState(x => x.CurrentState);
 
         Initially(
@@ -36,11 +46,14 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                     x.Saga.Color = x.Message.Color;
                     x.Saga.Size = x.Message.Size;
                 })
+                // .Schedule(OrderPaymentTimeout,
+                //     context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
                 .TransitionTo(Created));
-        
-        // CompositeEvent(() => OrderReady, x => x.ReadyEventStatus, SubmitOrder, OrderAccepted);
 
         DuringAny(
+            When(OrderPaymentTimeout?.Received)
+                .Unschedule(OrderPaymentTimeout)
+                .Then(x => LogStep(logger, nameof(OrderPaymentTimeout), x.Saga)),
             When(FaultOrderCreated).Then(x => LogStep(logger, nameof(FaultOrderCreated), x.Saga)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
@@ -58,7 +71,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                     OrderId = x.Saga.OrderId
                 })));
     }
-    
+
     private void SetupEvents()
     {
         Event(() => OrderCreated,

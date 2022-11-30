@@ -14,4 +14,6 @@ public class CheckoutState : SagaStateMachineInstance
     public int PaymentRetries { get; set; }
     
     public int RequestCount { get; set; }
+    public Guid? OrderPaymentTimeoutTokenId { get; set; }
+
 }

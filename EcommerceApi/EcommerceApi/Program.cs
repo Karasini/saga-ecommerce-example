@@ -12,6 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMassTransit(x =>
 {
+    x.AddMessageScheduler(new Uri("queue:scheduler"));
     x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
     x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition)).InMemoryRepository();
 }).AddScoped<IOrdersService, OrdersService>();
