@@ -17,8 +17,13 @@ internal class PaymentsService : IPaymentsService
 
     public async Task MakePayment(MakePayment command)
     {
-        var successEvent = new PaymentSucceeded(command.OrderId, DateTime.Now);
-
-        await _publishEndpoint.Publish(successEvent);
+        if (command.Result == "success")
+        {
+            await _publishEndpoint.Publish(new PaymentSucceeded(command.OrderId, DateTime.Now));
+        }
+        else
+        {
+            await _publishEndpoint.Publish(new PaymentFailed(command.OrderId));
+        }
     }
 }

@@ -23,7 +23,7 @@ internal class OrdersService : IOrdersService
     {
         var createdEvent = new OrderCreated
         {
-            OrderId = 1,
+            OrderId = createOrder.OrderId,
             ProductId = createOrder.ProductId,
             Color = createOrder.Color,
             Size = createOrder.Color,

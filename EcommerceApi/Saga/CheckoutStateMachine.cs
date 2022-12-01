@@ -21,10 +21,10 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 
     public Event<Fault<OrderCreated>> FaultOrderCreated { get; private set; }
     public Event<OrderCreated> OrderCreated { get; private set; }
+    public Event<PaymentSucceeded> PaymentSucceeded { get; private set; }
+    public Event<PaymentFailed> PaymentFailedEvent { get; private set; }
     public Event<OrderStatusRequest> OrderStatusRequest { get; private set; }
-
     public Schedule<CheckoutState, OrderPaymentTimeoutExpired> OrderPaymentTimeout { get; private set; }
-
 
     public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
     {
@@ -51,10 +51,20 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 //     context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
                 .TransitionTo(Created));
 
+        During(Created,
+            When(PaymentSucceeded)
+                .Then(x => x.Saga.PaymentDate = x.Message.PaymentDate)
+                .TransitionTo(Paid));
+
+        During(Created, PaymentFailed, When(PaymentFailedEvent)
+            .Then(x => x.Saga.PaymentRetries += 1)
+            .IfElse(x => x.Saga.PaymentRetries >= 3,
+                x => x.TransitionTo(Cancelled),
+                x => x.TransitionTo(PaymentFailed)));
+        
         DuringAny(
             When(OrderPaymentTimeout?.Received)
-                .Unschedule(OrderPaymentTimeout)
-                .Then(x => LogStep(logger, nameof(OrderPaymentTimeout), x.Saga)),
+                .Unschedule(OrderPaymentTimeout),
             When(FaultOrderCreated).Then(x => LogStep(logger, nameof(FaultOrderCreated), x.Saga)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
@@ -80,6 +90,8 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .SelectId(x => x.CorrelationId ?? NewId.NextGuid()));
 
         Event(() => FaultOrderCreated, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.Message.OrderId));
+        Event(() => PaymentSucceeded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
+        Event(() => PaymentFailedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
 
         Event(() => OrderStatusRequest, x =>
         {
