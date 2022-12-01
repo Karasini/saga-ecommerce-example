@@ -7,39 +7,66 @@ using Orders;
 using Orders.Services;
 using Payments;
 using Saga;
+using Serilog;
+using Serilog.Events;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Quartz", LogEventLevel.Information)
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.Seq("http://localhost:5341")
+    .CreateLogger();
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-
-builder.Services
-    .AddEndpointsApiExplorer()
-    .AddSwaggerGen()
-    .AddMassTransit(x =>
-    {
-        x.AddMessageScheduler(new Uri("queue:scheduler"));
-        x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
-        x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition))
-            .InMemoryRepository();
-    }).AddOrders()
-    .AddPayments();
-
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    BuildAndRun(args);
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
 }
 
-app.UseHttpsRedirection();
 
-app.UseAuthorization();
+void BuildAndRun(string[] strings)
+{
+    var builder = WebApplication.CreateBuilder(strings);
 
-app.MapControllers();
+    builder.Host.UseSerilog();
 
-app.Run();
+    builder.Services.AddControllers();
+
+    builder.Services
+        .AddEndpointsApiExplorer()
+        .AddSwaggerGen()
+        .AddMassTransit(x =>
+        {
+            x.AddMessageScheduler(new Uri("queue:scheduler"));
+            x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
+            x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition))
+                .InMemoryRepository();
+        }).AddOrders()
+        .AddPayments();
+
+
+    var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
+}
