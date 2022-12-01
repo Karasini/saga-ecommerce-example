@@ -1,3 +1,5 @@
+using System;
+
 namespace Orders.Exceptions;
 
 internal class OrderNotFoundException : Exception

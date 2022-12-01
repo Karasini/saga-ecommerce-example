@@ -1,6 +1,6 @@
 namespace Payments.Commands;
 
-public class MakePayment
+public record MakePayment
 {
-    public Guid OrderId { get; set; }
+    public int OrderId { get; set; }
 }

@@ -2,8 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,6 +11,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Orders\Orders.csproj" />
+      <ProjectReference Include="..\Payments\Payments.csproj" />
       <ProjectReference Include="..\Saga\Saga.csproj" />
     </ItemGroup>
 

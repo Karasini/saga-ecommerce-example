@@ -1,5 +1,11 @@
+using System;
 using MassTransit;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Orders;
 using Orders.Services;
+using Payments;
 using Saga;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,15 +13,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddMassTransit(x =>
-{
-    x.AddMessageScheduler(new Uri("queue:scheduler"));
-    x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
-    x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition)).InMemoryRepository();
-}).AddScoped<IOrdersService, OrdersService>();
+
+builder.Services
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen()
+    .AddMassTransit(x =>
+    {
+        x.AddMessageScheduler(new Uri("queue:scheduler"));
+        x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
+        x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition))
+            .InMemoryRepository();
+    }).AddOrders()
+    .AddPayments();
 
 
 var app = builder.Build();

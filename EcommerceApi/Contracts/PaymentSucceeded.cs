@@ -1,3 +1,3 @@
 namespace Contracts;
 
-internal record PaymentSucceeded(int OrderId, DateTime PaymentDate);
+public record PaymentSucceeded(int OrderId, DateTime PaymentDate);

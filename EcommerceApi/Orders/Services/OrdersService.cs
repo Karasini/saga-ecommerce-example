@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Contracts;
 using MassTransit;
 using Orders.Commands;
@@ -7,7 +8,7 @@ using Orders.Queries;
 
 namespace Orders.Services;
 
-public class OrdersService : IOrdersService
+internal class OrdersService : IOrdersService
 {
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IRequestClient<OrderStatusRequest> _orderStatusClient;

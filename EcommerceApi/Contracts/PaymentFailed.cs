@@ -1,3 +1,3 @@
 namespace Contracts;
 
-internal record PaymentFailed(int OrderId);
+public record PaymentFailed(int OrderId);
