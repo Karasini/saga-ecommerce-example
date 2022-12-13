@@ -25,8 +25,6 @@ internal class OrdersService : IOrdersService
         {
             OrderId = createOrder.OrderId,
             ProductId = createOrder.ProductId,
-            Color = createOrder.Color,
-            Size = createOrder.Color,
         };
 
         await _publishEndpoint.Publish(createdEvent);

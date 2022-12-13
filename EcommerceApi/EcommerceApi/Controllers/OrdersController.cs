@@ -23,7 +23,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetOrders(int id)
+    public async Task<IActionResult> GetOrder(int id)
     {
         var orderDto = await _ordersService.GetOrder(new GetOrder(id));
         return Ok(orderDto);

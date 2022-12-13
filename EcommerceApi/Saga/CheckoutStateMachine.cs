@@ -44,8 +44,6 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 {
                     x.Saga.OrderId = x.Message.OrderId;
                     x.Saga.ProductId = x.Message.ProductId;
-                    x.Saga.Color = x.Message.Color;
-                    x.Saga.Size = x.Message.Size;
                 })
                 // .Schedule(OrderPaymentTimeout,
                 //     context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
@@ -56,15 +54,16 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .Then(x => x.Saga.PaymentDate = x.Message.PaymentDate)
                 .TransitionTo(Paid));
 
-        During(Created, PaymentFailed, When(PaymentFailedEvent)
+        During(Created, PaymentFailed, 
+            When(PaymentFailedEvent)
             .Then(x => x.Saga.PaymentRetries += 1)
             .IfElse(x => x.Saga.PaymentRetries >= 3,
                 x => x.TransitionTo(Cancelled),
                 x => x.TransitionTo(PaymentFailed)));
-        
+
         DuringAny(
             When(OrderPaymentTimeout?.Received)
-                .Unschedule(OrderPaymentTimeout),
+                .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
             When(FaultOrderCreated).Then(x => LogStep(logger, nameof(FaultOrderCreated), x.Saga)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
