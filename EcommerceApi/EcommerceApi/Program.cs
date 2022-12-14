@@ -9,6 +9,7 @@ using Payments;
 using Saga;
 using Serilog;
 using Serilog.Events;
+using Warehouse;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -45,12 +46,14 @@ void BuildAndRun(string[] strings)
         .AddSwaggerGen()
         .AddMassTransit(x =>
         {
+            x.ConfigureWarehouse();
             x.AddMessageScheduler(new Uri("queue:scheduler"));
             x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
             x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition))
                 .InMemoryRepository();
         }).AddOrders()
-        .AddPayments();
+        .AddPayments()
+        .AddWarehouse();
 
 
     var app = builder.Build();
