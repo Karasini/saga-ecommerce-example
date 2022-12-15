@@ -14,7 +14,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public State PaymentFailed { get; private set; }
     public State MoneyRefundStarted { get; private set; }
     public State ProductReserved { get; private set; }
-    public State ReservationFailed { get; private set; }
+    public State ProductReservationFailed { get; private set; }
     public State DeliveryBooked { get; private set; }
     public State BookDeliveryFailed { get; private set; }
     public State Cancelled { get; private set; }
@@ -28,6 +28,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public Event<OrderStatusRequest> OrderStatusRequest { get; private set; }
     public Schedule<CheckoutState, OrderPaymentTimeoutExpired> OrderPaymentTimeout { get; private set; }
     public Event<ProductReserved> ProductReservedEvent { get; private set; }
+    public Event<Fault<ReserveProductCommand>> FaultReserveProductCommand { get; private set; }
     public Request<CheckoutState, BookDeliveryRequest, BookDeliveryResponse> BookDelivery { get; private set; }
     public Event<DeliverySucceeded> DeliverySucceeded { get; private set; }
     public Event<MoneyRefunded> MoneyRefunded { get; private set; }
@@ -74,7 +75,16 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
             When(ProductReservedEvent)
                 .TransitionTo(ProductReserved)
                 .Request(BookDelivery, x => x.Init<BookDeliveryRequest>(new BookDeliveryRequest()))
-                .TransitionTo(BookDelivery.Pending));
+                .TransitionTo(BookDelivery.Pending),
+            When(FaultReserveProductCommand)
+                .TransitionTo(ProductReservationFailed)
+                .PublishAsync(x => x.Init<RefundMoneyCommand>(
+                    new RefundMoneyCommand
+                    {
+                        OrderId = x.Saga.OrderId
+                    }))
+                .TransitionTo(MoneyRefundStarted)
+        );
 
         During(BookDelivery.Pending,
             When(BookDelivery.Completed)
@@ -141,6 +151,8 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         Event(() => PaymentSucceeded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => PaymentFailedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => ProductReservedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
+        Event(() => FaultReserveProductCommand,
+            e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.Message.OrderId));
         Event(() => DeliverySucceeded, e => e.CorrelateBy<int>(state => state.DeliveryId, m => m.Message.DeliveryId));
         Event(() => MoneyRefunded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
 
