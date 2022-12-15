@@ -12,6 +12,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public State Created { get; private set; }
     public State Paid { get; private set; }
     public State PaymentFailed { get; private set; }
+    public State MoneyRefundStarted { get; private set; }
     public State ProductReserved { get; private set; }
     public State ReservationFailed { get; private set; }
     public State DeliveryBooked { get; private set; }
@@ -29,6 +30,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public Event<ProductReserved> ProductReservedEvent { get; private set; }
     public Request<CheckoutState, BookDeliveryRequest, BookDeliveryResponse> BookDelivery { get; private set; }
     public Event<DeliverySucceeded> DeliverySucceeded { get; private set; }
+    public Event<MoneyRefunded> MoneyRefunded { get; private set; }
 
     public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
     {
@@ -70,6 +72,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 
         During(Paid,
             When(ProductReservedEvent)
+                .TransitionTo(ProductReserved)
                 .Request(BookDelivery, x => x.Init<BookDeliveryRequest>(new BookDeliveryRequest()))
                 .TransitionTo(BookDelivery.Pending));
 
@@ -78,21 +81,35 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .Then(x => x.Saga.DeliveryId = x.Message.DeliveryId)
                 .TransitionTo(DeliveryBooked),
             When(BookDelivery.Faulted)
-                .TransitionTo(BookDeliveryFailed),
+                .TransitionTo(BookDeliveryFailed)
+                .PublishAsync(x => x.Init<RefundMoneyCommand>(new RefundMoneyCommand
+                {
+                    OrderId = x.Saga.OrderId
+                }))
+                .TransitionTo(MoneyRefundStarted),
             When(BookDelivery.TimeoutExpired)
-                .TransitionTo(BookDeliveryFailed)); //TODO: Cancel order and refund
+                .TransitionTo(BookDeliveryFailed)
+                .PublishAsync(x => x.Init<RefundMoneyCommand>(new RefundMoneyCommand
+                {
+                    OrderId = x.Saga.OrderId
+                }))
+                .TransitionTo(MoneyRefundStarted));
 
         During(DeliveryBooked,
             When(DeliverySucceeded)
+                .Then(x => x.Saga.DeliveryDate = DateTime.Now)
                 .TransitionTo(Completed));
-        
-        
+
+        During(MoneyRefundStarted,
+            When(MoneyRefunded)
+                .TransitionTo(Closed));
+
         DuringAny(
             When(OrderPaymentTimeout?.Received)
                 .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
             When(FaultOrderCreated).Then(x =>
                 logger.LogInformation("Something went wrong with Handling OrderCreated: {Exception}",
-                    x.Message.Exceptions.FirstOrDefault().Message)),
+                    x.Message.Exceptions.FirstOrDefault()?.Message)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
                 .Then(x =>
@@ -125,6 +142,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         Event(() => PaymentFailedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => ProductReservedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => DeliverySucceeded, e => e.CorrelateBy<int>(state => state.DeliveryId, m => m.Message.DeliveryId));
+        Event(() => MoneyRefunded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
 
         Request(() => BookDelivery);
 

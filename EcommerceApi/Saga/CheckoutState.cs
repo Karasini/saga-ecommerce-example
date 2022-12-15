@@ -10,6 +10,7 @@ public class CheckoutState : SagaStateMachineInstance
     public int OrderId { get; set; }
     public int? DeliveryId { get; set; }
     public DateTime? PaymentDate { get; set; }
+    public DateTime? DeliveryDate { get; set; }
     public int ProductId { get; set; }
     public int PaymentRetries { get; set; }
     

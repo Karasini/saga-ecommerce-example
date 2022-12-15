@@ -51,6 +51,7 @@ void BuildAndRun(string[] strings)
             
             x.ConfigureWarehouse();
             x.ConfigureDelivery();
+            x.ConfigurePayments();
             x.ConfigureSaga();
             x.AddMessageScheduler(schedulerEndpoint);
 
