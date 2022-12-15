@@ -32,12 +32,15 @@ internal class OrdersService : IOrdersService
 
     public async Task<OrderDto> GetOrder(GetOrder query)
     {
-        var (status, notFound) = await _orderStatusClient.GetResponse<OrderStatusResponse, OrderNotFoundResponse>(new OrderStatusRequest(query.OrderId));
+        var (status, notFound) =
+            await _orderStatusClient.GetResponse<OrderStatusResponse, OrderNotFoundResponse>(
+                new OrderStatusRequest(query.OrderId));
 
         if (status.IsCompletedSuccessfully)
         {
             var response = await status;
-            return new OrderDto(response.Message.OrderId, response.Message.Status);
+            return new OrderDto(response.Message.OrderId, response.Message.CurrentState, response.Message.DeliveryId,
+                response.Message.PaymentDate, response.Message.ProductId, response.Message.PaymentRetries);
         }
         else
         {

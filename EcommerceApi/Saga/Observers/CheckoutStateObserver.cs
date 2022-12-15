@@ -12,10 +12,11 @@ internal class CheckoutStateObserver : IStateObserver<CheckoutState>
     {
         _logger = logger;
     }
+
     public Task StateChanged(BehaviorContext<CheckoutState> context, State currentState, State previousState)
     {
-        // using var scope = _logger.BeginScope("CheckoutState for {OrderId} changes", context.Saga.OrderId);
-        _logger.LogInformation($"StateChanged '{previousState}' => '{currentState}'");
+        _logger.LogInformation("StateChanged '{PreviousState}' => '{CurrentState}'", previousState?.Name,
+            currentState?.Name);
 
         return Task.CompletedTask;
     }

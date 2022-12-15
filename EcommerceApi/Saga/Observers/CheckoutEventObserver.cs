@@ -17,28 +17,28 @@ internal class CheckoutEventObserver : IEventObserver<CheckoutState>
     public Task PreExecute(BehaviorContext<CheckoutState> context)
     {
         EnrichLog(context.Saga);
-        _logger.LogInformation("PreExecution of {Event}", context.Event.Name);
+        _logger.LogInformation("Started processing the event {Event}", context.Event.Name);
         return Task.CompletedTask;
     }
 
     public Task PreExecute<T>(BehaviorContext<CheckoutState, T> context) where T : class
     {
         EnrichLog(context.Saga);
-        _logger.LogInformation("PreExecution of {Event}", context.Event.Name);
+        _logger.LogInformation("Started processing the event {Event}", context.Event.Name);
         return Task.CompletedTask;
     }
 
     public Task PostExecute(BehaviorContext<CheckoutState> context)
     {
         EnrichLog(context.Saga);
-        _logger.LogInformation("PostExecution of {Event}", context.Event.Name);
+        _logger.LogInformation("Finished processing the event {Event}", context.Event.Name);
         return Task.CompletedTask;
     }
 
     public Task PostExecute<T>(BehaviorContext<CheckoutState, T> context) where T : class
     {
         EnrichLog(context.Saga);
-        _logger.LogInformation("PostExecution of {Event}", context.Event.Name);
+        _logger.LogInformation("Finished processing the event {Event}", context.Event.Name);
         return Task.CompletedTask;
     }
 

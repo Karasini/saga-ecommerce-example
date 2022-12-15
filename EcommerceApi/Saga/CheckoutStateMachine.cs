@@ -54,7 +54,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 //     context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
                 .TransitionTo(Created));
 
-        During(Created,
+        During(Created, PaymentFailed,
             When(PaymentSucceeded)
                 .Then(x => x.Saga.PaymentDate = x.Message.PaymentDate)
                 .PublishAsync(x => x.Init<ReserveProductCommand>(new ReserveProductCommand
@@ -62,9 +62,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                     ProductId = x.Saga.ProductId,
                     OrderId = x.Saga.OrderId
                 }))
-                .TransitionTo(Paid));
-
-        During(Created, PaymentFailed,
+                .TransitionTo(Paid),
             When(PaymentFailedEvent)
                 .Then(x => x.Saga.PaymentRetries += 1)
                 .IfElse(x => x.Saga.PaymentRetries >= 3,
@@ -92,7 +90,9 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         DuringAny(
             When(OrderPaymentTimeout?.Received)
                 .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
-            When(FaultOrderCreated).Then(x => logger.LogInformation("Something went wrong with Handling OrderCreated: {Exception}", x.Message.Exceptions.FirstOrDefault().Message)),
+            When(FaultOrderCreated).Then(x =>
+                logger.LogInformation("Something went wrong with Handling OrderCreated: {Exception}",
+                    x.Message.Exceptions.FirstOrDefault().Message)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
                 .Then(x =>
@@ -105,8 +105,12 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 })
                 .RespondAsync(x => x.Init<OrderStatusResponse>(new OrderStatusResponse
                 {
-                    Status = x.Saga.CurrentState,
-                    OrderId = x.Saga.OrderId
+                    CurrentState = x.Saga.CurrentState,
+                    OrderId = x.Saga.OrderId,
+                    DeliveryId = x.Saga.DeliveryId,
+                    PaymentDate = x.Saga.PaymentDate,
+                    PaymentRetries = x.Saga.PaymentRetries,
+                    ProductId = x.Saga.ProductId
                 })));
     }
 
