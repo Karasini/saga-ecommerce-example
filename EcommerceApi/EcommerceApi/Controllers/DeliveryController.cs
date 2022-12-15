@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
+using Delivery.Services;
 using Microsoft.AspNetCore.Mvc;
-using Payments.Commands;
 
 namespace EcommerceApi.Controllers;
 
@@ -8,9 +8,18 @@ namespace EcommerceApi.Controllers;
 [Route("[controller]")]
 public class DeliveryController : ControllerBase
 {
-    [HttpPost("{id:int}")]
-    public async Task<IActionResult> ConfirmDelivery(MakePayment payment)
+    private readonly IDeliveryService _deliveryService;
+
+    public DeliveryController(IDeliveryService deliveryService)
     {
+        _deliveryService = deliveryService;
+    }
+
+    [HttpPost("{id:int}/makeDelivery")]
+    public async Task<IActionResult> MakeDelivery(int id)
+    {
+        await _deliveryService.MakeDelivery(id);
+        
         return NoContent();
     }
 }

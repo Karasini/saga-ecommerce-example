@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Contracts;
 using MassTransit;
-using MassTransit.Events;
 using Microsoft.Extensions.Logging;
 using Saga.Events;
 
@@ -29,7 +28,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public Schedule<CheckoutState, OrderPaymentTimeoutExpired> OrderPaymentTimeout { get; private set; }
     public Event<ProductReserved> ProductReservedEvent { get; private set; }
     public Request<CheckoutState, BookDeliveryRequest, BookDeliveryResponse> BookDelivery { get; private set; }
-    public Event<OrderDelivered> OrderDelivered { get; private set; }
+    public Event<DeliverySucceeded> DeliverySucceeded { get; private set; }
 
     public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
     {
@@ -84,9 +83,10 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .TransitionTo(BookDeliveryFailed)); //TODO: Cancel order and refund
 
         During(DeliveryBooked,
-            When(OrderDelivered)
-                .TransitionTo(Closed));
-
+            When(DeliverySucceeded)
+                .TransitionTo(Completed));
+        
+        
         DuringAny(
             When(OrderPaymentTimeout?.Received)
                 .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
@@ -124,7 +124,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         Event(() => PaymentSucceeded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => PaymentFailedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => ProductReservedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
-        Event(() => OrderDelivered, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
+        Event(() => DeliverySucceeded, e => e.CorrelateBy<int>(state => state.DeliveryId, m => m.Message.DeliveryId));
 
         Request(() => BookDelivery);
 

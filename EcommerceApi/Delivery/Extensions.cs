@@ -1,4 +1,5 @@
 using Delivery.Consumers;
+using Delivery.Services;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +9,7 @@ public static class Extensions
 {
     public static IServiceCollection AddDelivery(this IServiceCollection services)
     {
+        services.AddScoped<IDeliveryService, DeliveryService>();
         return services;
     }
 
