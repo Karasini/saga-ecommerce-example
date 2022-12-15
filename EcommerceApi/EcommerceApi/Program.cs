@@ -1,4 +1,5 @@
 using System;
+using Delivery;
 using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ using Warehouse;
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Quartz", LogEventLevel.Information)
-    .MinimumLevel.Debug()
+    .MinimumLevel.Information()
     .WriteTo.Console()
     .WriteTo.Seq("http://localhost:5341")
     .CreateLogger();
@@ -46,13 +47,28 @@ void BuildAndRun(string[] strings)
         .AddSwaggerGen()
         .AddMassTransit(x =>
         {
+            var schedulerEndpoint = new Uri("queue:scheduler");
+            
             x.ConfigureWarehouse();
-            x.AddMessageScheduler(new Uri("queue:scheduler"));
-            x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
-            x.AddSagaStateMachine<CheckoutStateMachine, CheckoutState>(typeof(CheckoutStateMachineDefinition))
-                .InMemoryRepository();
+            x.ConfigureDelivery();
+            x.ConfigureSaga();
+            x.AddMessageScheduler(schedulerEndpoint);
+
+            // x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
+            x.UsingRabbitMq((context,cfg) =>
+            {
+                cfg.Host("localhost", "/", h => {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+                cfg.UseMessageScheduler(schedulerEndpoint);
+                cfg.ConfigureEndpoints(context);
+            });
+
         }).AddOrders()
         .AddPayments()
+        .AddDelivery()
+        .AddSaga()
         .AddWarehouse();
 
 

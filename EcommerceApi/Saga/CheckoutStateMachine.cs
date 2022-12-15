@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Contracts;
 using MassTransit;
 using MassTransit.Events;
@@ -91,7 +92,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         DuringAny(
             When(OrderPaymentTimeout?.Received)
                 .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
-            When(FaultOrderCreated).Then(x => LogStep(logger, nameof(FaultOrderCreated), x.Saga)),
+            When(FaultOrderCreated).Then(x => logger.LogInformation("Something went wrong with Handling OrderCreated: {Exception}", x.Message.Exceptions.FirstOrDefault().Message)),
             When(OrderStatusRequest)
                 .Then(x => x.Saga.RequestCount += 1)
                 .Then(x =>
@@ -137,13 +138,5 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 }
             }));
         });
-    }
-
-    private static void LogStep(ILogger<CheckoutStateMachine> logger, string stepName, CheckoutState state)
-    {
-        logger.LogInformation(
-            "{StepName} with correlationId: {CorrelationId}, orderId: {OrderId} requestCount: {RequestCount}", stepName,
-            state.CorrelationId,
-            state.OrderId, state.RequestCount);
     }
 }
