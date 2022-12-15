@@ -24,7 +24,6 @@ internal class OrdersService : IOrdersService
         var createdEvent = new OrderCreated
         {
             OrderId = createOrder.OrderId,
-            ProductId = createOrder.ProductId,
         };
 
         await _publishEndpoint.Publish(createdEvent);

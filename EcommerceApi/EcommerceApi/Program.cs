@@ -47,25 +47,27 @@ void BuildAndRun(string[] strings)
         .AddSwaggerGen()
         .AddMassTransit(x =>
         {
-            var schedulerEndpoint = new Uri("queue:scheduler");
-            
             x.ConfigureWarehouse();
             x.ConfigureDelivery();
             x.ConfigurePayments();
             x.ConfigureSaga();
-            x.AddMessageScheduler(schedulerEndpoint);
+            x.AddMessageScheduler(new Uri("queue:scheduler"));
 
-            // x.UsingInMemory((context, cfg) => { cfg.ConfigureEndpoints(context); });
-            x.UsingRabbitMq((context,cfg) =>
+            x.UsingInMemory((context, cfg) =>
             {
-                cfg.Host("localhost", "/", h => {
-                    h.Username("guest");
-                    h.Password("guest");
-                });
-                cfg.UseMessageScheduler(schedulerEndpoint);
+                cfg.UseInMemoryScheduler("scheduler");
                 cfg.ConfigureEndpoints(context);
             });
-
+            // x.UsingRabbitMq((context, cfg) =>
+            // {
+            //     cfg.Host("localhost", "/", h =>
+            //     {
+            //         h.Username("guest");
+            //         h.Password("guest");
+            //     });
+            //     cfg.UseInMemoryScheduler("scheduler");
+            //     cfg.ConfigureEndpoints(context);
+            // });
         }).AddOrders()
         .AddPayments()
         .AddDelivery()

@@ -15,6 +15,6 @@ internal class DeliveryService : IDeliveryService
 
     public async Task MakeDelivery(int deliveryId)
     {
-        await _publishEndpoint.Publish(new DeliverySucceeded { DeliveryId = deliveryId });
+        await _publishEndpoint.Publish(new DeliverySucceeded { OrderId = deliveryId });
     }
 }

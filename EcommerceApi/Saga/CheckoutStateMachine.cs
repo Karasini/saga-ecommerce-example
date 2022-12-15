@@ -50,10 +50,9 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .Then(x =>
                 {
                     x.Saga.OrderId = x.Message.OrderId;
-                    x.Saga.ProductId = x.Message.ProductId;
                 })
-                // .Schedule(OrderPaymentTimeout,
-                //     context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
+                .Schedule(OrderPaymentTimeout,
+                    context => context.Init<OrderPaymentTimeoutExpired>(new OrderPaymentTimeoutExpired { OrderId = context.Saga.OrderId }))
                 .TransitionTo(Created));
 
         During(Created, PaymentFailed,
@@ -61,9 +60,9 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                 .Then(x => x.Saga.PaymentDate = x.Message.PaymentDate)
                 .PublishAsync(x => x.Init<ReserveProductCommand>(new ReserveProductCommand
                 {
-                    ProductId = x.Saga.ProductId,
                     OrderId = x.Saga.OrderId
                 }))
+                .Unschedule(OrderPaymentTimeout)
                 .TransitionTo(Paid),
             When(PaymentFailedEvent)
                 .Then(x => x.Saga.PaymentRetries += 1)
@@ -116,7 +115,8 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 
         DuringAny(
             When(OrderPaymentTimeout?.Received)
-                .Unschedule(OrderPaymentTimeout).TransitionTo(Cancelled),
+                .Unschedule(OrderPaymentTimeout)
+                .TransitionTo(Cancelled),
             When(FaultOrderCreated).Then(x =>
                 logger.LogInformation("Something went wrong with Handling OrderCreated: {Exception}",
                     x.Message.Exceptions.FirstOrDefault()?.Message)),
@@ -137,7 +137,6 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
                     DeliveryId = x.Saga.DeliveryId,
                     PaymentDate = x.Saga.PaymentDate,
                     PaymentRetries = x.Saga.PaymentRetries,
-                    ProductId = x.Saga.ProductId
                 })));
     }
 
@@ -153,7 +152,7 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         Event(() => ProductReservedEvent, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => FaultReserveProductCommand,
             e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.Message.OrderId));
-        Event(() => DeliverySucceeded, e => e.CorrelateBy<int>(state => state.DeliveryId, m => m.Message.DeliveryId));
+        Event(() => DeliverySucceeded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
         Event(() => MoneyRefunded, e => e.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId));
 
         Request(() => BookDelivery);
