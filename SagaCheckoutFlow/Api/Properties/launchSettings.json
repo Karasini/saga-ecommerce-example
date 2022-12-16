@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "EcommerceApi": {
+    "SagaCheckoutFlow": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
