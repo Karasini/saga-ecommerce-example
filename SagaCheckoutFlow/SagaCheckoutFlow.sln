@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EcommerceApi", "EcommerceApi\EcommerceApi.csproj", "{2161CE4D-0CBC-4759-94D1-CCD9E7764D8A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{2161CE4D-0CBC-4759-94D1-CCD9E7764D8A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orders", "Orders\Orders.csproj", "{8D85E693-B176-4FC7-A3FE-47CEE9CA8D47}"
 EndProject

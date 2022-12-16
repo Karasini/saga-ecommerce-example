@@ -6,7 +6,7 @@ using Orders.Services;
 using Payments.Commands;
 using Payments.Services;
 
-namespace EcommerceApi.Controllers;
+namespace Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]

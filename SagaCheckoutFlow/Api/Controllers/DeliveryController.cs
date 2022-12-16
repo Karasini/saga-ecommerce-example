@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Delivery.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EcommerceApi.Controllers;
+namespace Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
