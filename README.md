@@ -35,8 +35,38 @@ To run standalone SEQ please run
 ```
 docker run --name seq -d --restart unless-stopped -e ACCEPT_EULA=Y -p 5341:80 datalust/seq:latest
 ```
+
 Or run SEQ from docker-compose file in `SagaCheckoutFlow/Api/docker-compose.yaml` directory.
 ```
 docker-compose up -d seq
 ```
 
+### Run with RabbitMQ
+
+Run docker-compose file (`SagaCheckoutFlow/Api/docker-compose.yaml`)
+```
+docker-compose up -d
+```
+
+Change `SagaCheckoutFlow/Api/appsettings.json` file and set `Transport`:
+``` json
+  "MassTransit": {
+    "Transport": "RabbitMq"
+  }
+```
+
+### Postman flow
+Import postman collection and environments from `docs/postman` directory. Then send requests:
+1. Create order
+2. Make payment
+3. After 10seconds send 'Make delivery'
+
+To check SAGA state, please send `Get order` request
+
+To generate payment failed scenario, change "result" property in `Make peyment` request body to `fail`
+``` json
+{
+    "orderId": 1,
+    "result": "fail"
+}
+```
