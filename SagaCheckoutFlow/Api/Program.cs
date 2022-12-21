@@ -1,4 +1,5 @@
 using System;
+using Api;
 using Delivery;
 using MassTransit;
 using Microsoft.AspNetCore.Builder;
@@ -38,8 +39,9 @@ void BuildAndRun(string[] strings)
 {
     var builder = WebApplication.CreateBuilder(strings);
 
-    builder.Host.UseSerilog();
+    var massTransitOptions = builder.Services.GetOptions<MassTransitOptions>("MassTransit");
 
+    builder.Host.UseSerilog();
     builder.Services.AddControllers();
 
     builder.Services
@@ -53,21 +55,29 @@ void BuildAndRun(string[] strings)
             x.ConfigureSaga();
             x.AddMessageScheduler(new Uri("queue:scheduler"));
 
-            x.UsingInMemory((context, cfg) =>
+            switch (massTransitOptions.Transport)
             {
-                cfg.UseInMemoryScheduler("scheduler");
-                cfg.ConfigureEndpoints(context);
-            });
-            // x.UsingRabbitMq((context, cfg) =>
-            // {
-            //     cfg.Host("localhost", "/", h =>
-            //     {
-            //         h.Username("guest");
-            //         h.Password("guest");
-            //     });
-            //     cfg.UseInMemoryScheduler("scheduler");
-            //     cfg.ConfigureEndpoints(context);
-            // });
+                default:
+                case MassTransitOptions.TransportsTypes.InMemory:
+                    x.UsingInMemory((context, cfg) =>
+                    {
+                        cfg.UseInMemoryScheduler("scheduler");
+                        cfg.ConfigureEndpoints(context);
+                    });
+                    break;
+                case MassTransitOptions.TransportsTypes.RabbitMq:
+                    x.UsingRabbitMq((context, cfg) =>
+                    {
+                        cfg.Host("localhost", "/", h =>
+                        {
+                            h.Username("guest");
+                            h.Password("guest");
+                        });
+                        cfg.UseInMemoryScheduler("scheduler");
+                        cfg.ConfigureEndpoints(context);
+                    });
+                    break;
+            }
         }).AddOrders()
         .AddPayments()
         .AddDelivery()
