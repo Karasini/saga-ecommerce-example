@@ -25,6 +25,10 @@ Additional business rules that are required:
 - If product does not exist in warehouse, order is cancelled and refund is made
 - Delivery needs to be booked and it is handled by external company
 
+## Saga
+![SAGA States](/docs/saga-states-graph.svg)
+
+
 ## How to run
 The solution uses MassTransit library which support multiple transport. By default project supports in memory transport and does not require any infrastructure dependencies.
 
