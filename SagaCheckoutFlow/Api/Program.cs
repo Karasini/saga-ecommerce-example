@@ -1,5 +1,6 @@
 using System;
 using Api;
+using Common;
 using Delivery;
 using MassTransit;
 using Microsoft.AspNetCore.Builder;

@@ -2,7 +2,7 @@ using MassTransit;
 
 namespace Saga;
 
-public class CheckoutStateMachineDefinition : SagaDefinition<CheckoutState>
+internal class CheckoutStateMachineDefinition : SagaDefinition<CheckoutState>
 {
     public CheckoutStateMachineDefinition()
     {

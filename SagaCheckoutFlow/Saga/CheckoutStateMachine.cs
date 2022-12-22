@@ -7,7 +7,7 @@ using Saga.Events;
 
 namespace Saga;
 
-public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
+internal class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
 {
     public State Created { get; private set; }
     public State Paid { get; private set; }
@@ -33,13 +33,13 @@ public class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public Event<DeliverySucceeded> DeliverySucceeded { get; private set; }
     public Event<MoneyRefunded> MoneyRefunded { get; private set; }
 
-    public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger)
+    public CheckoutStateMachine(ILogger<CheckoutStateMachine> logger, CheckoutSagaOptions options)
     {
         SetupEvents();
 
         Schedule(() => OrderPaymentTimeout, instance => instance.OrderPaymentTimeoutTokenId, s =>
         {
-            s.Delay = TimeSpan.FromMinutes(1);
+            s.Delay = TimeSpan.FromSeconds(options.PaymentTimeoutSeconds);
 
             s.Received = r => r.CorrelateBy<int>(state => state.OrderId, m => m.Message.OrderId);
         });

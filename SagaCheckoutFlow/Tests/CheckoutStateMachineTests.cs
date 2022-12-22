@@ -12,7 +12,7 @@ namespace Tests
         [Test]
         public void ShowTheGraph()
         {
-            var orderStateMachine = new CheckoutStateMachine(new NullLogger<CheckoutStateMachine>());
+            var orderStateMachine = new CheckoutStateMachine(new NullLogger<CheckoutStateMachine>(), new CheckoutSagaOptions());
 
             var graph = orderStateMachine.GetGraph();
 

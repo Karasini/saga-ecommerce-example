@@ -3,7 +3,7 @@ using MassTransit;
 
 namespace Saga;
 
-public class CheckoutState : SagaStateMachineInstance
+internal class CheckoutState : SagaStateMachineInstance
 {
     public Guid CorrelationId { get; set; }
     public string CurrentState { get; set; }
