@@ -19,8 +19,6 @@ internal class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
     public State BookDeliveryFailed { get; private set; }
     public State Cancelled { get; private set; }
     public State Closed { get; private set; }
-    public State Completed { get; private set; }
-
     public Event<Fault<OrderCreated>> FaultOrderCreated { get; private set; }
     public Event<OrderCreated> OrderCreated { get; private set; }
     public Event<PaymentSucceeded> PaymentSucceeded { get; private set; }
@@ -107,11 +105,11 @@ internal class CheckoutStateMachine : MassTransitStateMachine<CheckoutState>
         During(DeliveryBooked,
             When(DeliverySucceeded)
                 .Then(x => x.Saga.DeliveryDate = DateTime.Now)
-                .TransitionTo(Completed));
+                .TransitionTo(Closed));
 
         During(MoneyRefundStarted,
             When(MoneyRefunded)
-                .TransitionTo(Closed));
+                .TransitionTo(Cancelled));
 
         DuringAny(
             When(OrderPaymentTimeout?.Received)
